@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Decisión léxica — Demo</title>
+<style>
+body{margin:0;font-family:Arial,sans-serif;color:#111}#app{height:100vh;display:flex;align-items:center;justify-content:center;text-align:center}
+.screen{width:min(820px,88vw)}h1{font-size:34px}p{font-size:21px;line-height:1.5}.small{font-size:16px;color:#555}
+button{font-size:20px;padding:12px 22px;margin:12px;cursor:pointer}.stim,.fix{font-size:54px}.feedback{font-size:28px;margin-top:25px;min-height:40px}
+.keys{font-weight:bold;font-size:24px}table{border-collapse:collapse;margin:25px auto;font-size:19px}th,td{padding:9px 18px;border-bottom:1px solid #bbb;text-align:left}
+</style></head><body><div id="app"></div><script>
+const practice=[["PERRO","high",1],["LURPO","nonword",0],["ÁRBOL","high",1],["TANFE","nonword",0],["VELA","low",1],["BRUPO","nonword",0]];
+const high=["CASA","MANO","MESA","AGUA","MADRE","NOCHE","CALLE","LIBRO","PUERTA","TIERRA"];
+const low=["REMO","FARO","LUPA","LOMA","ATRIL","JUNCO","VERJA","DARDO","YUNQUE","ANCLA"];
+const non=["NARO","DEMA","LUNO","SEMA","NALTE","DARPE","MUNCO","SELPO","TIRNA","FURTE","PELTA","RANCO","NERPA","TULDO","CALPO","MURTE","PELNO","SURTA","NURCO","TALPE"];
+let trials=[...high.map(s=>[s,"high",1]),...low.map(s=>[s,"low",1]),...non.map(s=>[s,"nonword",0])];
+const app=document.getElementById("app");let results=[],list=[],i=0,onset=0,prac=false;
+function shuffle(a){for(let n=a.length-1;n>0;n--){let j=Math.floor(Math.random()*(n+1));[a[n],a[j]]=[a[j],a[n]]}return a}
+function intro(){app.innerHTML=`<div class=screen><h1>Tarea de decisión léxica</h1><p>En cada ensayo vas a ver una secuencia de letras.</p><p>Decidí <b>lo más rápido y correctamente posible</b> si corresponde a una palabra del español.</p><p class=keys>F = PALABRA &nbsp;&nbsp; J = NO PALABRA</p><p>Primero vas a hacer 6 ensayos de práctica.</p><button id=s>Comenzar práctica</button><p class=small>Esta demostración no guarda ni envía tus respuestas.</p></div>`;document.getElementById("s").onclick=()=>start(practice,true)}
+function start(x,p){prac=p;list=p?[...x]:shuffle([...x]);i=0;fix()}
+function fix(){if(i>=list.length){return prac?practiceEnd():finish()}app.innerHTML="<div class=screen><div class=fix>+</div></div>";setTimeout(stim,500)}
+function stim(){app.innerHTML=`<div class=screen><div class=stim>${list[i][0]}</div>${prac?'<div class=feedback id=fb></div>':''}</div>`;onset=performance.now();document.addEventListener("keydown",respond,{once:true})}
+function respond(e){let k=e.key.toLowerCase();if(k!="f"&&k!="j"){document.addEventListener("keydown",respond,{once:true});return}let rt=performance.now()-onset,t=list[i],correct=(k=="f")==Boolean(t[2]);if(!prac)results.push({s:t[0],type:t[1],rt,correct});if(prac){document.getElementById("fb").textContent=correct?"Correcto":"Incorrecto";setTimeout(()=>{i++;fix()},500)}else{i++;setTimeout(fix,150)}}
+function practiceEnd(){app.innerHTML=`<div class=screen><h1>Fin de la práctica</h1><p>Ahora empieza la tarea.</p><p class=keys>F = PALABRA &nbsp;&nbsp; J = NO PALABRA</p><p>Durante la tarea no vas a recibir feedback.</p><button id=g>Comenzar</button></div>`;document.getElementById("g").onclick=()=>start(trials,false)}
+function mrt(type){let a=results.filter(x=>x.correct&&x.type==type).map(x=>x.rt);return a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):"—"}
+function finish(){let acc=Math.round(100*results.filter(x=>x.correct).length/results.length);app.innerHTML=`<div class=screen><h1>¡Terminaste!</h1><p>Estos son tus resultados:</p><table><tr><th>Medida</th><th>Resultado</th></tr><tr><td>Precisión total</td><td>${acc}%</td></tr><tr><td>RT medio — palabras frecuentes</td><td>${mrt("high")} ms</td></tr><tr><td>RT medio — palabras infrecuentes</td><td>${mrt("low")} ms</td></tr><tr><td>RT medio — pseudopalabras</td><td>${mrt("nonword")} ms</td></tr></table><p><b>¿Observás alguna diferencia entre las categorías?</b></p><p class=small>Los RT se calcularon sólo sobre respuestas correctas. Los datos no fueron almacenados.</p><button onclick="location.reload()">Volver a empezar</button></div>`}
+intro();
+</script></body></html>
